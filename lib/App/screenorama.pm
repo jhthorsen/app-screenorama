@@ -231,20 +231,70 @@ __DATA__
 <!DOCTYPE html>
 <html>
 <head>
+%= stylesheet begin
+body { background: #111; }
+body, pre, input { font-size: 13px; font-family: monospace; color: #eee; margin: 0; padding: 0; }
+input, pre { padding: 8px; }
+input {
+  background: #555;
+  display: block;
+  width: 100%;
+  border: 0;
+  position: fixed;
+  bottom: 0;
+}
+% end
 %= javascript begin
+var color = { // from http://flatuicolors.com/
+  '30': '#000000',
+  '31': '#c0392b',
+  '32': '#2ecc71',
+  '33': '#f1c40f',
+  '34': '#48a2df',
+  '35': '#9b59b6',
+  '36': '#1abc9c',
+  '37': '#ecf0f1',
+};
+
+var replaceColors = function(match, a, b) {
+  console.log([a,b]);
+  var closing = replaceColors.span ? '</span>' : '';
+  var style = [];
+
+  replaceColors.span = false;
+
+  if(!a && typeof b == 'undefined') { return closing; } // regular
+
+  if(color[b]) style.push('color: ' + color[b]);
+  else if(color[a]) style.push('background-color: ' + color[a]);
+
+  if(a == 1) { style.push('font-weight: bold'); }
+  else if(a == 4) { style.push('text-decoration: underline'); }
+
+  replaceColors.span = true;
+  return closing + '<span style="' + style.join(';') + '">';
+};
+
 window.onload = function() {
   var ws = new WebSocket('<%= $stream_base %>/stream');
   var pre = document.getElementsByTagName('pre')[0];
   var cmd = document.getElementById('cmd');
+
   ws.onopen = function() { console.log('CONNECT'); };
   ws.onclose = function() { console.log('DISCONNECT'); };
   ws.onmessage = function(event) {
     console.log(event.data);
     var data = JSON.parse(event.data);
-    if(data.output) pre.innerHTML += data.output;
+    if(data.output) {
+      pre.innerHTML += data.output
+        .replace(/\u001B\(B/g, function() { return ''; })
+        .replace(/\u001B\[(?:0?(\d?);(\d\d)|(0?)|(\d\d))m/g, replaceColors);
+    }
+    window.scrollTo(0, document.body.scrollHeight);
   };
 
   if(cmd) {
+    cmd.focus();
     cmd.onkeypress = function(e) {
       console.log(e.which);
       ws.send('{"key":' + e.which + '}');
@@ -255,11 +305,11 @@ window.onload = function() {
 % end
 </head>
 <body>
-% if($stdin) {
-<input id="cmd">
-% }
 <pre>
 $ <%= join ' ', $self->app->program, @{ $self->app->program_args } %>
 </pre>
+% if($stdin) {
+<input id="cmd" placeholder="Type input to the program">
+% }
 </body>
 </html>
