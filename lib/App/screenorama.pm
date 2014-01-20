@@ -13,6 +13,12 @@ App::screenorama - Application output to websocket stream
 This program allow you to pipe STDOUT and STDERR from a program over a
 websocket.
 
+=begin html
+
+<img src="https://github.com/jhthorsen/app-screenorama/blob/master/resources/app-screenorama.png" alt="screenshot">
+
+=end
+
 =head2 Protocol
 
 The data transmitted over the websocket connection is JSON in each frame:
