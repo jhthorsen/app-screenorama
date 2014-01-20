@@ -103,12 +103,17 @@ one stream. False means start L</program> on each request.
 
 Default: false.
 
+=head2 stdin
+
+Allow standard input from websocket to L</program>.
+
 =cut
 
 has conduit => 'pty';
 has program => '';
 has program_args => sub { +[] };
 has single => 0;
+has stdin => 0;
 has _fork => sub {
   my $self = shift;
   my $fork = Mojo::IOLoop::ReadWriteFork->new;
@@ -147,6 +152,7 @@ sub startup {
   my $r = $self->routes;
 
   $self->renderer->classes([__PACKAGE__]);
+  $self->defaults(stdin => $self->stdin);
 
   $r->get('/' => sub {
     my $c = shift;
@@ -169,6 +175,7 @@ sub startup {
 sub _single_stream {
   my $c = shift;
   my $plugins = $c->app->plugins;
+  my $fork = $c->app->_fork;
   my $cb;
 
   $cb = sub {
@@ -179,6 +186,7 @@ sub _single_stream {
   };
 
   $c->send({ json => { program => $c->app->program, program_args => $c->app->program_args } });
+  $c->on(json => sub { $fork->write(chr $_[1]->{key}); }) if $c->app->stdin;
   $c->on(finish => sub { $plugins->unsubscribe(output => $cb); });
   $plugins->on(output => $cb);
 }
@@ -190,6 +198,7 @@ sub _stream_on_request {
 
   Scalar::Util::weaken($c);
   Mojo::IOLoop->stream($c->tx->connection)->timeout(60);
+  $c->on(json => sub { $fork->write(chr $_[1]->{key}); }) if $c->app->stdin;
   $c->on(finish => sub { $fork->kill($ENV{SCREENORAMA_KILL_SIGNAL} || 15); });
   $c->stash(fork => $fork);
   $c->send({ json => { program => $app->program, program_args => $app->program_args } });
@@ -226,6 +235,7 @@ __DATA__
 window.onload = function() {
   var ws = new WebSocket('<%= $stream_base %>/stream');
   var pre = document.getElementsByTagName('pre')[0];
+  var cmd = document.getElementById('cmd');
   ws.onopen = function() { console.log('CONNECT'); };
   ws.onclose = function() { console.log('DISCONNECT'); };
   ws.onmessage = function(event) {
@@ -233,10 +243,21 @@ window.onload = function() {
     var data = JSON.parse(event.data);
     if(data.output) pre.innerHTML += data.output;
   };
+
+  if(cmd) {
+    cmd.onkeypress = function(e) {
+      console.log(e.which);
+      ws.send('{"key":' + e.which + '}');
+      if(e.which == 13) cmd.value = '';
+    };
+  }
 };
 % end
 </head>
 <body>
+% if($stdin) {
+<input id="cmd">
+% }
 <pre>
 $ <%= join ' ', $self->app->program, @{ $self->app->program_args } %>
 </pre>

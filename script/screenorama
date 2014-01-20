@@ -2,7 +2,8 @@
 use Applify;
 
 option str => listen => 'Listen to a custom URL. Default: http://*:5000', 'http://*:5000';
-option bool => single => 'Run only one command, and exit at end';
+option bool => stdin => 'Allow standard input from ws', 0;
+option bool => single => 'Run only one command, and exit at end', 0;
 option str => conduit => 'pty (default) or pipe', 'pty';
 
 documentation 'App::screenorama';
@@ -11,7 +12,12 @@ version 'App::screenorama';
 sub server {
   my $self = shift;
 
-  App::screenorama->new(conduit => $self->conduit, single => $self->single, @_);
+  App::screenorama->new(
+    conduit => $self->conduit,
+    single => $self->single,
+    stdin => $self->stdin,
+    @_,
+  );
 }
 
 app {
