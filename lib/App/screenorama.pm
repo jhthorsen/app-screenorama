@@ -237,6 +237,7 @@ __DATA__
 body { background: #111; }
 body, pre, input { font-size: 13px; font-family: monospace; color: #eee; margin: 0; padding: 0; }
 input, pre { padding: 8px; }
+pre { padding-bottom: 40px; }
 input {
   background: #555;
   display: block;
@@ -297,8 +298,11 @@ window.onload = function() {
 
   if(cmd) {
     cmd.focus();
-    cmd.onkeypress = function(e) {
+    cmd.onkeydown = function(e) {
       console.log(e.which);
+      if(e.which == 8) ws.send('{"key":' + 0x7f + '}');
+    };
+    cmd.onkeypress = function(e) {
       ws.send('{"key":' + e.which + '}');
       if(e.which == 13) cmd.value = '';
     };
