@@ -185,6 +185,8 @@ sub _single_stream {
     $c->finish;
   };
 
+  Mojo::IOLoop->stream($c->tx->connection)->timeout(60);
+
   $c->send({ json => { program => $c->app->program, program_args => $c->app->program_args } });
   $c->on(json => sub { $fork->write(chr $_[1]->{key}); }) if $c->app->stdin;
   $c->on(finish => sub { $plugins->unsubscribe(output => $cb); });
