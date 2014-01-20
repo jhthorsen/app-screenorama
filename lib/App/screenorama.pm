@@ -15,7 +15,7 @@ websocket.
 
 =begin html
 
-<img src="https://github.com/jhthorsen/app-screenorama/blob/master/resources/app-screenorama.png" alt="screenshot">
+<img src="https://github.com/jhthorsen/app-screenorama/raw/master/resources/app-screenorama.png" alt="screenshot">
 
 =end
 

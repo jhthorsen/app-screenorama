@@ -8,81 +8,10 @@ DESCRIPTION
     This program allow you to pipe STDOUT and STDERR from a program over a
     websocket.
 
-  Protocol
-    The data transmitted over the websocket connection is JSON in each
-    frame:
+POD ERRORS
+    Hey! The above document had some coding errors, which are explained
+    below:
 
-    *   Startup
-
-          {"program":$str,"program_args":...}
-
-        Same as "program" and "program_args".
-
-    *   Output
-
-          {"output":$str}
-
-        Comes after each time the program emit data. NOTE: There's no
-        guaranty that it will be emitted on newline.
-
-    *   Exit
-
-          {"exit_value":$int,"signal":$int}
-
-        The exit value of the application. The websocket will be closed
-        after you see this.
-
-    *   Error
-
-          {"error":$str}
-
-        If something goes wrong with the application or other operating
-        system errors.
-
-SYNOPSIS
-  Server
-      # let others connect to the running program
-      $ screenorama --listen http://*:5000 --single -- 'while sleep 1; do echo "hey!"; done'
-
-      # pipe the output on incoming request
-      $ screenorama -- ls -l
-
-  Client
-    Connect a browser to <http://localhost:5000> or <ws://localhost:5000> to
-    see the output.
-
-ATTRIBUTES
-  conduit
-      $str = $self->conduit;
-      $self = $self->conduit($str);
-
-    Defaults to "pty". Can also be set to "pipe".
-
-  program
-      $str = $self->program;
-      $self = $self->program($str);
-
-    Path, name of to the application to run or the whole command.
-
-  program_args
-      $array_ref = $self->program_args;
-      $self = $self->program_args([qw( --option )]);
-
-    Arguments to "program".
-
-  single
-      $bool = $self->single;
-      $self = $self->single($bool);
-
-    Set this to true if you want all incoming requests to connect to one
-    stream. False means start "program" on each request.
-
-    Default: false.
-
-METHODS
-  startup
-    Used to start the web server.
-
-AUTHOR
-    Jan Henning Thorsen - "jhthorsen@cpan.org"
+    Around line 20:
+        '=end' without a target? (Should be "=end html")
 
