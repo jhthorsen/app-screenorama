@@ -6,6 +6,7 @@ WriteMakefile(
   AUTHOR => 'Jan Henning Thorsen <jhthorsen@cpan.org>',
   LICENSE => 'perl',
   PREREQ_PM => {
+    'Applify' => 0.05,
     'Mojolicious' => '3.40',
     'Mojo::IOLoop::ReadWriteFork' => '0.04',
   },

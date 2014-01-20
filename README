@@ -52,6 +52,12 @@ SYNOPSIS
     see the output.
 
 ATTRIBUTES
+  conduit
+      $str = $self->conduit;
+      $self = $self->conduit($str);
+
+    Defaults to "pty". Can also be set to "pipe".
+
   program
       $str = $self->program;
       $self = $self->program($str);
@@ -61,10 +67,8 @@ ATTRIBUTES
   program_args
       $array_ref = $self->program_args;
       $self = $self->program_args([qw( --option )]);
-      $self = $self->program_args(undef);
 
-    Arguments to "program". Setting it to "undef" will allow the shell to
-    interpret "program".
+    Arguments to "program".
 
   single
       $bool = $self->single;

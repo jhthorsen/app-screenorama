@@ -1,0 +1,33 @@
+#!/usr/bin/env perl
+use Applify;
+
+option str => listen => 'Listen to a custom URL. Default: http://*:5000', 'http://*:5000';
+option bool => single => 'Run only one command, and exit at end';
+option str => conduit => 'pty (default) or pipe', 'pty';
+
+documentation 'App::screenorama';
+version 'App::screenorama';
+
+sub server {
+  my $self = shift;
+
+  App::screenorama->new(conduit => $self->conduit, single => $self->single, @_);
+}
+
+app {
+  my($self, @args) = @_;
+  my($server, $program, @program_args);
+
+  while(my $arg = shift @args) {
+    push @program_args, $arg if $program;
+    $program = shift @args if $arg eq '--';
+  }
+
+  $program or die "Usage: screenorama -- <program> [program_args]\n";
+
+  require App::screenorama;
+  $server = $self->server(program => $program, program_args => \@program_args);
+  $server->start('daemon', '-l', $self->listen);
+
+  return 0;
+};
