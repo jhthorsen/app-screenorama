@@ -12,6 +12,7 @@ version 'App::screenorama';
 sub server {
   my $self = shift;
 
+  require App::screenorama;
   App::screenorama->new(
     conduit => $self->conduit,
     single => $self->single,
@@ -30,8 +31,6 @@ app {
   }
 
   $program or die "Usage: screenorama -- <program> [program_args]\n";
-
-  require App::screenorama;
   $server = $self->server(program => $program, program_args => \@program_args);
   $server->start('daemon', '-l', $self->listen);
 

@@ -158,7 +158,6 @@ sub startup {
   my $r = $self->routes;
 
   $self->renderer->classes([__PACKAGE__]);
-  $self->defaults(stdin => $self->stdin);
 
   $r->get('/' => sub {
     my $c = shift;
@@ -166,7 +165,11 @@ sub startup {
     my $stream_base = $url->base;
 
     $stream_base->scheme($url->scheme =~ /https/ ? 'wss' : 'ws');
-    $c->render('index', stream_base => $stream_base);
+    $c->render(
+      cmd => join(' ', $self->app->program, @{ $self->app->program_args }),
+      stream_base => $stream_base,
+      template => 'index',
+    );
   });
 
   if($self->single) {
@@ -236,15 +239,17 @@ Jan Henning Thorsen - C<jhthorsen@cpan.org>
 
 __DATA__
 @@ index.html.ep
+% my $stdin = $self->app->stdin;
 <!DOCTYPE html>
 <html>
 <head>
-%= stylesheet begin
+  <title>screenorama - <%= $cmd %></title>
+  %= stylesheet begin
 body { background: #111; padding: 8px; }
 body, pre { font-size: 13px; font-family: monospace; color: #eee; margin: 0; padding: 0; }
 input { position: absolute; left: -600px; }
-% end
-%= javascript begin
+  % end
+  %= javascript begin
 var color = { // from http://flatuicolors.com/
   '30': '#000000',
   '31': '#c0392b',
@@ -321,12 +326,14 @@ window.onload = function() {
     };
   }
 };
-% end
+  % end
 </head>
 <body>
 <pre>
-$ <%= join ' ', $self->app->program, @{ $self->app->program_args } %>
+$ <%= $cmd %>
+% if($stdin) {
 <span id="cursor">&#9602;</span>
+% }
 </pre>
 % if($stdin) {
 <input id="cmd" placeholder="Type input to the program">
