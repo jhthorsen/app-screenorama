@@ -17,8 +17,6 @@ websocket.
 
 <img src="https://github.com/jhthorsen/app-screenorama/raw/master/resources/app-screenorama.gif" alt="screenshot">
 
-=end
-
 =head2 Protocol
 
 The data transmitted over the websocket connection is JSON in each frame:
