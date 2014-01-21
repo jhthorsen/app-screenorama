@@ -8,10 +8,3 @@ DESCRIPTION
     This program allow you to pipe STDOUT and STDERR from a program over a
     websocket.
 
-POD ERRORS
-    Hey! The above document had some coding errors, which are explained
-    below:
-
-    Around line 20:
-        '=end' without a target? (Should be "=end html")
-
