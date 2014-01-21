@@ -240,18 +240,9 @@ __DATA__
 <html>
 <head>
 %= stylesheet begin
-body { background: #111; }
-body, pre, input { font-size: 13px; font-family: monospace; color: #eee; margin: 0; padding: 0; }
-input, pre { padding: 8px; }
-pre { padding-bottom: 40px; }
-input {
-  background: #555;
-  display: block;
-  width: 100%;
-  border: 0;
-  position: fixed;
-  bottom: 0;
-}
+body { background: #111; padding: 8px; }
+body, pre { font-size: 13px; font-family: monospace; color: #eee; margin: 0; padding: 0; }
+input { position: absolute; left: -600px; }
 % end
 %= javascript begin
 var color = { // from http://flatuicolors.com/
@@ -288,29 +279,45 @@ window.onload = function() {
   var ws = new WebSocket('<%= $stream_base %>/stream');
   var pre = document.getElementsByTagName('pre')[0];
   var cmd = document.getElementById('cmd');
+  var cursor = document.getElementById('cursor');
+
+  cursor.visible = true;
+
+  setInterval(
+    function() {
+      cursor.style.opacity = cursor.visible ? 0.02 : 1.0;
+      cursor.visible = !cursor.visible;
+    },
+    700
+  );
 
   ws.onopen = function() { console.log('CONNECT'); };
   ws.onclose = function() { console.log('DISCONNECT'); };
   ws.onmessage = function(event) {
     console.log(event.data);
     var data = JSON.parse(event.data);
-    if(data.output) {
+    var backspace = 0;
+    if(typeof data.output !== 'undefined') {
+      cursor.parentElement.removeChild(cursor);
       pre.innerHTML += data.output
         .replace(/\u001B\(B/g, function() { return ''; })
         .replace(/\u001B\[(?:0?(\d?);(\d\d)|(0?)|(\d\d))m/g, replaceColors);
+      pre.appendChild(cursor);
     }
     window.scrollTo(0, document.body.scrollHeight);
   };
 
   if(cmd) {
+    document.onclick = function() { cmd.focus(); };
     cmd.focus();
     cmd.onkeydown = function(e) {
       console.log(e.which);
       if(e.which == 8) ws.send('{"key":' + 0x7f + '}');
     };
     cmd.onkeypress = function(e) {
-      ws.send('{"key":' + e.which + '}');
-      if(e.which == 13) cmd.value = '';
+      e.preventDefault();
+      ws.send('{"key":' + e.keyCode + '}');
+      if(e.keyCode == 13) cmd.value = '';
     };
   }
 };
@@ -319,6 +326,7 @@ window.onload = function() {
 <body>
 <pre>
 $ <%= join ' ', $self->app->program, @{ $self->app->program_args } %>
+<span id="cursor">&#9602;</span>
 </pre>
 % if($stdin) {
 <input id="cmd" placeholder="Type input to the program">
