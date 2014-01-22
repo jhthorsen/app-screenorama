@@ -6,7 +6,7 @@ App::screenorama - Application output to websocket stream
 
 =head1 VERSION
 
-0.01
+0.02
 
 =head1 DESCRIPTION
 
@@ -74,7 +74,7 @@ see the output.
 use Mojo::Base 'Mojolicious';
 use Mojo::IOLoop::ReadWriteFork;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 ATTRIBUTES
 
