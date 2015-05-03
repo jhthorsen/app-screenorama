@@ -183,6 +183,6 @@ window.onload = screenorama;
   % end
 </head>
 <body>
-<div class="shell"><div class="command">$ <%= $cmd %></div><span class="output"></span><span class="cursor" style="display:none">&#9602;</span></div>
+<div class="shell"><span class="output"></span><span class="cursor" style="display:none">&#9602;</span></div>
 </body>
 </html>
