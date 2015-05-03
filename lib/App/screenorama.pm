@@ -119,7 +119,7 @@ has conduit => 'pty';
 has program => '';
 has program_args => sub { +[] };
 has single => 0;
-has stdin => 0;
+has stdin => $ENV{SCREENORAMA_STDIN} ? 1 : 0;
 has _fork => sub {
   my $self = shift;
   my $fork = Mojo::IOLoop::ReadWriteFork->new;
@@ -239,7 +239,6 @@ Jan Henning Thorsen - C<jhthorsen@cpan.org>
 
 __DATA__
 @@ index.html.ep
-% my $stdin = $self->app->stdin;
 <!DOCTYPE html>
 <html>
 <head>
@@ -262,19 +261,18 @@ var color = { // from http://flatuicolors.com/
 };
 
 var replaceColors = function(match, a, b) {
-  console.log([a,b]);
   var closing = replaceColors.span ? '</span>' : '';
   var style = [];
 
   replaceColors.span = false;
 
-  if(!a && typeof b == 'undefined') { return closing; } // regular
+  if (!a && typeof b == 'undefined') { return closing; } // regular
 
-  if(color[b]) style.push('color: ' + color[b]);
-  else if(color[a]) style.push('background-color: ' + color[a]);
+  if (color[b]) style.push('color: ' + color[b]);
+  else if (color[a]) style.push('background-color: ' + color[a]);
 
-  if(a == 1) { style.push('font-weight: bold'); }
-  else if(a == 4) { style.push('text-decoration: underline'); }
+  if (a == 1) { style.push('font-weight: bold'); }
+  else if (a == 4) { style.push('text-decoration: underline'); }
 
   replaceColors.span = true;
   return closing + '<span style="' + style.join(';') + '">';
@@ -286,7 +284,9 @@ window.onload = function() {
   var cmd = document.getElementById('cmd');
   var cursor = document.getElementById('cursor');
 
+% if (app->stdin) {
   cursor.visible = true;
+  cursor.style.display = 'inline';
 
   setInterval(
     function() {
@@ -295,14 +295,15 @@ window.onload = function() {
     },
     700
   );
+% }
 
-  ws.onopen = function() { console.log('CONNECT'); };
-  ws.onclose = function() { console.log('DISCONNECT'); };
+  ws.onclose = function() { connected = false; };
+  ws.onopen = function() { connected = true; };
   ws.onmessage = function(event) {
-    console.log(event.data);
+    if (window.console) console.log(event.data);
     var data = JSON.parse(event.data);
     var backspace = 0;
-    if(typeof data.output !== 'undefined') {
+    if (typeof data.output !== 'undefined') {
       cursor.parentElement.removeChild(cursor);
       pre.innerHTML += data.output
         .replace(/\u001B\(B/g, function() { return ''; })
@@ -312,31 +313,26 @@ window.onload = function() {
     window.scrollTo(0, document.body.scrollHeight);
   };
 
-  if(cmd) {
-    document.onclick = function() { cmd.focus(); };
-    cmd.focus();
-    cmd.onkeydown = function(e) {
-      console.log(e.which);
-      if(e.which == 8) ws.send('{"key":' + 0x7f + '}');
-    };
-    cmd.onkeypress = function(e) {
-      e.preventDefault();
-      ws.send('{"key":' + e.keyCode + '}');
-      if(e.keyCode == 13) cmd.value = '';
-    };
-  }
+  cmd.focus();
+  cmd.onkeydown = function(e) {
+    if (window.console) console.log([connected, e.which]);
+    if (e.which == 8 && connected) ws.send('{"key":' + 0x7f + '}');
+  };
+  cmd.onkeypress = function(e) {
+    e.preventDefault();
+    if (connected) ws.send('{"key":' + e.keyCode + '}');
+    if (e.keyCode == 13) cmd.value = '';
+  };
+
+  document.onclick = function() { cmd.focus(); };
 };
   % end
 </head>
 <body>
 <pre>
 $ <%= $cmd %>
-% if($stdin) {
-<span id="cursor">&#9602;</span>
-% }
+<span id="cursor" style="display:none">&#9602;</span>
 </pre>
-% if($stdin) {
 <input id="cmd" placeholder="Type input to the program">
-% }
 </body>
 </html>
