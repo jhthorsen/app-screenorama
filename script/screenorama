@@ -73,7 +73,7 @@ __DATA__
   <title>screenorama - <%= $cmd %></title>
   %= stylesheet begin
 body { background: #111; padding: 8px; }
-body, pre { font-size: 13px; font-family: monospace; color: #eee; margin: 0; padding: 0; }
+body, .shell { font-size: 13px; font-family: monospace; color: #eee; margin: 0; padding: 0; }
 input { position: absolute; left: -600px; }
   % end
   %= javascript begin
@@ -108,9 +108,9 @@ window.onload = function() {
   };
 
   var ws = new WebSocket('<%= $stream_base %>/stream');
-  var pre = document.getElementsByTagName('pre')[0];
-  var cmd = document.getElementById('cmd');
-  var cursor = document.getElementById('cursor');
+  var output = document.querySelector('.output');
+  var cursor = document.querySelector('.cursor');
+  var buf = '';
 
 % if ($enable_stdin) {
   cursor.visible = true;
@@ -125,42 +125,50 @@ window.onload = function() {
   );
 % }
 
-  ws.onclose = function() { connected = false; };
-  ws.onopen = function() { connected = true; };
+  ws.onopen = function() {
+    document.onkeydown = function(e) {
+      if (window.console) console.log(e.which);
+      if (e.which == 8) ws.send('{"key":' + 0x7f + '}');
+    };
+    document.onkeypress = function(e) {
+      e.preventDefault();
+      ws.send('{"key":' + e.keyCode + '}');
+    };
+  };
+
   ws.onmessage = function(event) {
     if (window.console) console.log(event.data);
     var data = JSON.parse(event.data);
-    var backspace = 0;
+    var clear;
     if (typeof data.output !== 'undefined') {
-      cursor.parentElement.removeChild(cursor);
-      pre.innerHTML += data.output
+      buf += data.output
         .replace(/\u001B\(B/g, function() { return ''; })
+        .replace(/\u001B\[3;J\u001B\[H\u001B\[2J(.*)/, function(a, c) { clear = c; })
         .replace(/\u001B\[(?:0?(\d?);(\d\d)|(0?)|(\d\d))m/g, replaceColors);
-      pre.appendChild(cursor);
+
+      if (typeof clear != 'undefined') {
+        var shell = output.parentNode;
+        var lines = shell.querySelectorAll('.line') || [];
+        for (i = 0; i < lines.length; i++) shell.removeChild(lines[i]);
+        buf = clear;
+      }
+
+      buf = buf.replace(/(.*?)\r?\n/g, function(a, c) {
+        var line = document.createElement('div');
+        line.className = 'line';
+        line.innerHTML = c;
+        output.parentNode.insertBefore(line, output);
+        return '';
+      });
+
+      output.innerHTML = buf;
     }
     window.scrollTo(0, document.body.scrollHeight);
   };
-
-  cmd.focus();
-  cmd.onkeydown = function(e) {
-    if (window.console) console.log([connected, e.which]);
-    if (e.which == 8 && connected) ws.send('{"key":' + 0x7f + '}');
-  };
-  cmd.onkeypress = function(e) {
-    e.preventDefault();
-    if (connected) ws.send('{"key":' + e.keyCode + '}');
-    if (e.keyCode == 13) cmd.value = '';
-  };
-
-  document.onclick = function() { cmd.focus(); };
 };
   % end
 </head>
 <body>
-<pre>
-$ <%= $cmd %>
-<span id="cursor" style="display:none">&#9602;</span>
-</pre>
-<input id="cmd" placeholder="Type input to the program">
+<div class="shell"><div class="command">$ <%= $cmd %></div><span class="output"></span><span class="cursor" style="display:none">&#9602;</span></div>
 </body>
 </html>
