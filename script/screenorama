@@ -3,7 +3,7 @@ use Mojolicious::Lite;
 use Mojo::IOLoop::ReadWriteFork;
 
 my $conduit = $ENV{SCREENORAMA_CONDUIT} || 'pty';
-my ($program, @program_args) = @ARGV;
+my ($program, @program_args) = @ARGV ? @ARGV : split /\s/, $ENV{SCREENORAMA_COMMAND};
 
 $program or die "Usage: $0 -- <program> [program,args]\n";
 

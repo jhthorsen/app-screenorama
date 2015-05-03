@@ -1,7 +1,11 @@
 Revision history for perl distribution App-screenorama
 
-0.03
+0.03 Not Released
+ - Add support for backspace
+ - Add support for "clear screen" shell command
  - Fix failing javascript when "cursor" was not present in DOM
+ - Remove running command from markup
+ - Will keep websocket alive from client
 
 0.02 2014-01-22T20:01:07Z
  - Fix pod

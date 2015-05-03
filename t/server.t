@@ -2,24 +2,12 @@ use Mojo::Base -strict;
 use Test::More;
 use Test::Mojo;
 
-my $t = Test::Mojo->new('App::screenorama');
+$ENV{SCREENORAMA_COMMAND} = 'ls -l';
+plan skip_all => "do script/screenorama: $@" unless do 'script/screenorama';
 
-$t->app->program('ls');
-$t->app->program_args(['-l']);
+my $t = Test::Mojo->new;
 
-$t->get_ok('/')
-  ->status_is(200)
-  ->text_is('title', 'screenorama - ls -l')
-  ->element_exists('pre')
-  ->element_exists_not('pre span.cursor')
-  ->element_exists_not('input')
-  ;
-
-$t->app->stdin(1);
-$t->get_ok('/')
-  ->status_is(200)
-  ->element_exists('pre span#cursor')
-  ->element_exists('input')
-  ;
+$t->get_ok('/')->status_is(200)->text_is('title', 'screenorama - ls -l')->element_exists('.shell span.output')
+  ->element_exists('.shell span.cursor');
 
 done_testing;
