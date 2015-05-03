@@ -92,28 +92,10 @@ var termColors = { // from http://flatuicolors.com/
 };
 
 var screenorama = function() {
-  var replaceColors = function(match, a, b) {
-    var closing = replaceColors.span ? '</span>' : '';
-    var style = [];
-
-    replaceColors.span = false;
-
-    if (!a && typeof b == 'undefined') { return closing; } // regular
-
-    if (termColors[b]) style.push('color: ' + termColors[b]);
-    else if (termColors[a]) style.push('background-color: ' + termColors[a]);
-
-    if (a == 1) { style.push('font-weight: bold'); }
-    else if (a == 4) { style.push('text-decoration: underline'); }
-
-    replaceColors.span = true;
-    return closing + '<span style="' + style.join(';') + '">';
-  };
-
-  var ws = new WebSocket('<%= $stream_base %>/stream');
-  var output = document.querySelector('.output');
   var cursor = document.querySelector('.cursor');
-  var buf = '';
+
+  screenorama.buf = '';
+  screenorama.ws = new WebSocket('<%= $stream_base %>/stream');
 
 % if (app->config->{stdin}) {
   cursor.visible = true;
@@ -126,60 +108,86 @@ var screenorama = function() {
     },
     700
   );
+
+  screenorama.ws.onopen = function() {
+    document.onkeydown = screenorama.keyDown;
+    document.onkeypress = screenorama.keyPress;
+    setInterval(function() { screenorama.ws.send('{}'); }, 5000);
+  };
 % }
 
-  ws.onopen = function() {
-    document.onkeydown = function(e) {
-      if (window.console) console.log(e.which);
-      if (e.which == 8) {
-        e.preventDefault();
-        ws.send('{"key":' + 0x7f + '}');
-      }
-      if (e.which == 9) {
-        e.preventDefault();
-        ws.send('{"key":' + 0x09 + '}');
-      }
-    };
-    document.onkeypress = function(e) {
-      e.preventDefault();
-      ws.send('{"key":' + e.keyCode + '}');
-    };
-    setInterval(function() { ws.send('{}'); }, 5000);
-  };
-
-  ws.onmessage = function(event) {
+  screenorama.ws.onmessage = function(event) {
     if (window.console) console.log(event.data);
     var data = JSON.parse(event.data);
-    var clear;
-    if (typeof data.output !== 'undefined') {
-      data.output = data.output
-        .replace(/\u001B\(B/g, function() { return ''; })
-        .replace(/\u001B\[K/g, function() { buf = buf.replace(/[\x00-\x1f]*.[\x00-\x1f]*$/, ''); return ''; })
-        .replace(/\u001B\(B/g, function() { return ''; })
-        .replace(/\u001B\[3;J\u001B\[H\u001B\[2J(.*)/, function(a, c) { clear = c; })
-        .replace(/\u001B\[(?:0?(\d?);(\d\d)|(0?)|(\d\d))m/g, replaceColors);
-
-      buf += data.output;
-
-      if (typeof clear != 'undefined') {
-        var shell = output.parentNode;
-        var lines = shell.querySelectorAll('.line') || [];
-        for (i = 0; i < lines.length; i++) shell.removeChild(lines[i]);
-        buf = clear;
-      }
-
-      buf = buf.replace(/(.*?)\r?\n/g, function(a, c) {
-        var line = document.createElement('div');
-        line.className = 'line';
-        line.innerHTML = c;
-        output.parentNode.insertBefore(line, output);
-        return '';
-      });
-
-      output.innerHTML = buf;
-    }
+    if (typeof data.output !== 'undefined') screenorama.printToScreen(data.output);
     window.scrollTo(0, document.body.scrollHeight);
   };
+};
+
+screenorama.keyDown = function(e) {
+  if (window.console) console.log(e.which);
+  if (e.which == 8) {
+    e.preventDefault();
+    screenorama.ws.send('{"key":' + 0x7f + '}');
+  }
+  if (e.which == 9) {
+    e.preventDefault();
+    screenorama.ws.send('{"key":' + 0x09 + '}');
+  }
+}
+
+screenorama.keyPress = function(e) {
+  e.preventDefault();
+  screenorama.ws.send('{"key":' + e.keyCode + '}');
+};
+
+screenorama.printToScreen = function(str) {
+  var output = document.querySelector('.output');
+  var clear;
+
+  str = str
+    .replace(/\u001B\(B/g, function() { return ''; })
+    .replace(/\u001B\[K/g, function() { screenorama.buf = screenorama.buf.replace(/[\x00-\x1f]*.[\x00-\x1f]*$/, ''); return ''; })
+    .replace(/\u001B\(B/g, function() { return ''; })
+    .replace(/\u001B\[3;J\u001B\[H\u001B\[2J(.*)/, function(a, c) { clear = c; })
+    .replace(/\u001B\[(?:0?(\d?);(\d\d)|(0?)|(\d\d))m/g, screenorama.replaceColors);
+
+  screenorama.buf += str;
+
+  if (typeof clear != 'undefined') {
+    var shell = output.parentNode;
+    var lines = shell.querySelectorAll('.line') || [];
+    for (i = 0; i < lines.length; i++) shell.removeChild(lines[i]);
+    screenorama.buf = clear;
+  }
+
+  screenorama.buf = screenorama.buf.replace(/(.*?)\r?\n/g, function(a, c) {
+    var line = document.createElement('div');
+    line.className = 'line';
+    line.innerHTML = c;
+    output.parentNode.insertBefore(line, output);
+    return '';
+  });
+
+  output.innerHTML = screenorama.buf;
+};
+
+screenorama.replaceColors = function(match, a, b) {
+  var closing = screenorama.replaceColors.span ? '</span>' : '';
+  var style = [];
+
+  screenorama.replaceColors.span = false;
+
+  if (!a && typeof b == 'undefined') { return closing; } // regular
+
+  if (termColors[b]) style.push('color: ' + termColors[b]);
+  else if (termColors[a]) style.push('background-color: ' + termColors[a]);
+
+  if (a == 1) { style.push('font-weight: bold'); }
+  else if (a == 4) { style.push('text-decoration: underline'); }
+
+  screenorama.replaceColors.span = true;
+  return closing + '<span style="' + style.join(';') + '">';
 };
 
 window.onload = screenorama;
