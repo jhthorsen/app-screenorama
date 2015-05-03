@@ -77,7 +77,7 @@ body, pre { font-size: 13px; font-family: monospace; color: #eee; margin: 0; pad
 input { position: absolute; left: -600px; }
   % end
   %= javascript begin
-var color = { // from http://flatuicolors.com/
+var termColors = { // from http://flatuicolors.com/
   '30': '#000000',
   '31': '#c0392b',
   '32': '#2ecc71',
@@ -88,25 +88,25 @@ var color = { // from http://flatuicolors.com/
   '37': '#ecf0f1',
 };
 
-var replaceColors = function(match, a, b) {
-  var closing = replaceColors.span ? '</span>' : '';
-  var style = [];
-
-  replaceColors.span = false;
-
-  if (!a && typeof b == 'undefined') { return closing; } // regular
-
-  if (color[b]) style.push('color: ' + color[b]);
-  else if (color[a]) style.push('background-color: ' + color[a]);
-
-  if (a == 1) { style.push('font-weight: bold'); }
-  else if (a == 4) { style.push('text-decoration: underline'); }
-
-  replaceColors.span = true;
-  return closing + '<span style="' + style.join(';') + '">';
-};
-
 window.onload = function() {
+  var replaceColors = function(match, a, b) {
+    var closing = replaceColors.span ? '</span>' : '';
+    var style = [];
+
+    replaceColors.span = false;
+
+    if (!a && typeof b == 'undefined') { return closing; } // regular
+
+    if (termColors[b]) style.push('color: ' + termColors[b]);
+    else if (termColors[a]) style.push('background-color: ' + termColors[a]);
+
+    if (a == 1) { style.push('font-weight: bold'); }
+    else if (a == 4) { style.push('text-decoration: underline'); }
+
+    replaceColors.span = true;
+    return closing + '<span style="' + style.join(';') + '">';
+  };
+
   var ws = new WebSocket('<%= $stream_base %>/stream');
   var pre = document.getElementsByTagName('pre')[0];
   var cmd = document.getElementById('cmd');
