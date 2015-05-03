@@ -2,23 +2,26 @@
 use Mojolicious::Lite;
 use Mojo::IOLoop::ReadWriteFork;
 
-my $conduit = $ENV{SCREENORAMA_CONDUIT} || 'pty';
+my $config = $ENV{MOJO_CONFIG} ? plugin 'Config' : app->config;
 my ($program, @program_args) = @ARGV ? @ARGV : split /\s/, $ENV{SCREENORAMA_COMMAND};
 
-$program or die "Usage: $0 -- <program> [program,args]\n";
+$config->{conduit}     ||= $ENV{SCREENORAMA_CONDUIT}     || 'pty';
+$config->{kill_signal} ||= $ENV{SCREENORAMA_KILL_SIGNAL} || 15;
+$config->{program_args} ||= \@program_args;
+$config->{program} ||= $program;
+$config->{single} //= $ENV{SCREENORAMA_SINGLE} || 0;
+$config->{stdin}  //= $ENV{SCREENORAMA_STDIN}  || 0;
 
-app->defaults(enable_stdin => $ENV{SCREENORAMA_STDIN});
+$program or die "Usage: $0 -- <program> [args]\n";
 
 get '/' => sub {
-  my $c           = shift;
-  my $url         = $c->req->url->to_abs;
-  my $stream_base = $url->base;
+  my $c   = shift;
+  my $url = $c->req->url->to_abs;
 
-  $stream_base->scheme($url->scheme =~ /https/ ? 'wss' : 'ws');
-  $c->render(cmd => join(' ', $program, @program_args), stream_base => $stream_base, template => 'index',);
+  $c->render('index', stream_base => $url->clone->base->scheme($url->scheme =~ /https/ ? 'wss' : 'ws'));
 };
 
-if ($ENV{SCREENORAMA_SINGLE}) {
+if ($config->{single}) {
   my $plugins = app->plugins;
   my ($fork, $last);
 
@@ -44,7 +47,7 @@ else {
     my $fork = _start_application($c);
 
     Scalar::Util::weaken($c);
-    $c->on(finish => sub { $fork->kill($ENV{SCREENORAMA_KILL_SIGNAL} || 15); undef $fork; });
+    $c->on(finish => sub { $fork->kill($config->{kill_signal}); undef $fork; });
     $fork->on(close => sub { $c->send({json => {exit_value => $_[1], signal => $_[2]}})->finish });
     $fork->on(error => sub { $c->send({json => {error      => $_[1]}})->finish });
     $fork->on(read  => sub { $c->send({json => {output     => $_[1]}}) });
@@ -60,8 +63,8 @@ sub _start_application {
   my $fork = Mojo::IOLoop::ReadWriteFork->new;
 
   Mojo::IOLoop->stream($c->tx->connection)->timeout(60);
-  $fork->start(conduit => $conduit, program => $program, program_args => \@program_args);
-  $c->on(json => sub { $fork->write(chr $_[1]->{key}) if $_[1]->{key} }) if $c->stash('enable_stdin');
+  $fork->start(conduit => $config->{conduit}, program => $config->{program}, program_args => $config->{program_args});
+  $c->on(json => sub { $fork->write(chr $_[1]->{key}) if $_[1]->{key} }) if $c->app->config->{stdin};
   $c->send({json => {program => $program, program_args => \@program_args}});
   $fork;
 }
@@ -70,7 +73,7 @@ __DATA__
 <!DOCTYPE html>
 <html>
 <head>
-  <title>screenorama - <%= $cmd %></title>
+  <title>screenorama - <%= app->config->{program} %> <%= join ' ', @{app->config->{program_args}} %></title>
   %= stylesheet begin
 body { background: #111; padding: 8px; }
 body, .shell { font-size: 13px; font-family: monospace; color: #eee; margin: 0; padding: 0; }
@@ -112,7 +115,7 @@ var screenorama = function() {
   var cursor = document.querySelector('.cursor');
   var buf = '';
 
-% if ($enable_stdin) {
+% if (app->config->{stdin}) {
   cursor.visible = true;
   cursor.style.display = 'inline';
 
