@@ -61,7 +61,7 @@ sub _start_application {
 
   Mojo::IOLoop->stream($c->tx->connection)->timeout(60);
   $fork->start(conduit => $conduit, program => $program, program_args => \@program_args);
-  $c->on(json => sub { $fork->write(chr $_[1]->{key}) }) if $c->stash('enable_stdin');
+  $c->on(json => sub { $fork->write(chr $_[1]->{key}) if $_[1]->{key} }) if $c->stash('enable_stdin');
   $c->send({json => {program => $program, program_args => \@program_args}});
   $fork;
 }
@@ -88,7 +88,7 @@ var termColors = { // from http://flatuicolors.com/
   '37': '#ecf0f1',
 };
 
-window.onload = function() {
+var screenorama = function() {
   var replaceColors = function(match, a, b) {
     var closing = replaceColors.span ? '</span>' : '';
     var style = [];
@@ -134,6 +134,7 @@ window.onload = function() {
       e.preventDefault();
       ws.send('{"key":' + e.keyCode + '}');
     };
+    setInterval(function() { ws.send('{}'); }, 5000);
   };
 
   ws.onmessage = function(event) {
@@ -166,6 +167,8 @@ window.onload = function() {
     window.scrollTo(0, document.body.scrollHeight);
   };
 };
+
+window.onload = screenorama;
   % end
 </head>
 <body>
