@@ -38,7 +38,7 @@ if ($config->{single}) {
 
     $plugins->on(output => $cb);
     $c->on(finish => sub { $plugins->unsubscribe(output => $cb); });
-    $c->send($last) if $last;
+    $c->send({json => $last}) if $last;
   };
 }
 else {
@@ -77,6 +77,7 @@ __DATA__
   %= stylesheet begin
 body { background: #111; padding: 8px; }
 body, .shell { font-size: 13px; font-family: monospace; color: #eee; margin: 0; padding: 0; }
+.status { border-top: 1px solid #333; margin-top: 20px; }
 input { position: absolute; left: -600px; }
   % end
   %= javascript begin
@@ -120,8 +121,19 @@ var screenorama = function() {
     if (window.console) console.log(event.data);
     var data = JSON.parse(event.data);
     if (typeof data.output !== 'undefined') screenorama.printToScreen(data.output);
+    if (typeof data.exit_value !== 'undefined') screenorama.exitStatus(data);
     window.scrollTo(0, document.body.scrollHeight);
   };
+};
+
+screenorama.exitStatus = function(data) {
+  var cursor = document.querySelector('.cursor');
+  var shell = document.querySelector('.shell');
+  var status = document.createElement('div');
+  cursor.style.display = 'none';
+  status.className = 'status';
+  status.innerHTML = '$?=' + data.exit_value;
+  shell.appendChild(status);
 };
 
 screenorama.keyDown = function(e) {

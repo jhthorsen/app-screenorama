@@ -2,6 +2,7 @@ Revision history for perl distribution App-screenorama
 
 0.04 Not Released
  - Add support for reading parameters from app->config
+ - Add exit status to browser
 
 0.03 2015-05-03T20:37:57+0200
  - Add support for backspace
