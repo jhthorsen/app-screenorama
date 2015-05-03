@@ -3,6 +3,7 @@ Revision history for perl distribution App-screenorama
 0.04 Not Released
  - Add support for reading parameters from app->config
  - Add exit status to browser
+ - Add support for "\b \b" (backspace)
  - Match more color codes
  - Fix tabular/multiple spaces output
  - Fix parsing @ARGV
