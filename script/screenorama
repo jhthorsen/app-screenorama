@@ -1,9 +1,20 @@
 #!/usr/bin/env perl
+BEGIN {
+  @Screenorama::ARGV = do {
+    my $i = 0;
+    for my $arg (@ARGV) {
+      last if $arg eq '--';
+      $i++;
+    }
+    splice @ARGV, $i, @ARGV, ();
+  };
+  shift @Screenorama::ARGV;
+}
 use Mojolicious::Lite;
 use Mojo::IOLoop::ReadWriteFork;
 
 my $config = $ENV{MOJO_CONFIG} ? plugin 'Config' : app->config;
-my ($program, @program_args) = @ARGV ? @ARGV : split /\s/, $ENV{SCREENORAMA_COMMAND};
+my ($program, @program_args) = @Screenorama::ARGV ? @Screenorama::ARGV : split /\s/, ($ENV{SCREENORAMA_COMMAND} || '');
 
 $config->{conduit}     ||= $ENV{SCREENORAMA_CONDUIT}     || 'pty';
 $config->{kill_signal} ||= $ENV{SCREENORAMA_KILL_SIGNAL} || 15;

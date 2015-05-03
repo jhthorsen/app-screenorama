@@ -5,6 +5,7 @@ Revision history for perl distribution App-screenorama
  - Add exit status to browser
  - Match more color codes
  - Fix tabular/multiple spaces output
+ - Fix parsing @ARGV
 
 0.03 2015-05-03T20:37:57+0200
  - Add support for backspace
