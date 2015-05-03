@@ -128,7 +128,14 @@ var screenorama = function() {
   ws.onopen = function() {
     document.onkeydown = function(e) {
       if (window.console) console.log(e.which);
-      if (e.which == 8) ws.send('{"key":' + 0x7f + '}');
+      if (e.which == 8) {
+        e.preventDefault();
+        ws.send('{"key":' + 0x7f + '}');
+      }
+      if (e.which == 9) {
+        e.preventDefault();
+        ws.send('{"key":' + 0x09 + '}');
+      }
     };
     document.onkeypress = function(e) {
       e.preventDefault();
@@ -142,10 +149,14 @@ var screenorama = function() {
     var data = JSON.parse(event.data);
     var clear;
     if (typeof data.output !== 'undefined') {
-      buf += data.output
+      data.output = data.output
+        .replace(/\u001B\(B/g, function() { return ''; })
+        .replace(/\u001B\[K/g, function() { buf = buf.replace(/[\x00-\x1f]*.[\x00-\x1f]*$/, ''); return ''; })
         .replace(/\u001B\(B/g, function() { return ''; })
         .replace(/\u001B\[3;J\u001B\[H\u001B\[2J(.*)/, function(a, c) { clear = c; })
         .replace(/\u001B\[(?:0?(\d?);(\d\d)|(0?)|(\d\d))m/g, replaceColors);
+
+      buf += data.output;
 
       if (typeof clear != 'undefined') {
         var shell = output.parentNode;
