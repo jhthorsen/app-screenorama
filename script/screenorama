@@ -77,6 +77,7 @@ __DATA__
   %= stylesheet begin
 body { background: #111; padding: 8px; }
 body, .shell { font-size: 13px; font-family: monospace; color: #eee; margin: 0; padding: 0; }
+pre { margin: 0; padding: 0; }
 .status { border-top: 1px solid #333; margin-top: 20px; }
 input { position: absolute; left: -600px; }
   % end
@@ -173,7 +174,7 @@ screenorama.printToScreen = function(str) {
   }
 
   screenorama.buf = screenorama.buf.replace(/(.*?)\r?\n/g, function(a, c) {
-    var line = document.createElement('div');
+    var line = document.createElement('pre');
     line.className = 'line';
     line.innerHTML = c;
     output.parentNode.insertBefore(line, output);
