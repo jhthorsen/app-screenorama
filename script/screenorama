@@ -158,11 +158,10 @@ screenorama.printToScreen = function(str) {
   var clear;
 
   str = str
-    .replace(/\u001B\(B/g, function() { return ''; })
+    .replace(/\u001B\[(?:0?(\d?);(\d\d)|(\d*)(X?))m/g, screenorama.replaceColors)
     .replace(/\u001B\[K/g, function() { screenorama.buf = screenorama.buf.replace(/[\x00-\x1f]*.[\x00-\x1f]*$/, ''); return ''; })
     .replace(/\u001B\(B/g, function() { return ''; })
-    .replace(/\u001B\[3;J\u001B\[H\u001B\[2J(.*)/, function(a, c) { clear = c; })
-    .replace(/\u001B\[(?:0?(\d?);(\d\d)|(0?)|(\d\d))m/g, screenorama.replaceColors);
+    .replace(/\u001B\[3;J\u001B\[H\u001B\[2J(.*)/, function(a, c) { clear = c; });
 
   screenorama.buf += str;
 
@@ -184,10 +183,11 @@ screenorama.printToScreen = function(str) {
   output.innerHTML = screenorama.buf;
 };
 
-screenorama.replaceColors = function(match, a, b) {
+screenorama.replaceColors = function(match, x, a, b) {
   var closing = screenorama.replaceColors.span ? '</span>' : '';
   var style = [];
 
+  console.log('replaceColors("' + [match, x, a, b].join('", "') +  '") == ' + (termColors[b || a] || closing));
   screenorama.replaceColors.span = false;
 
   if (!a && typeof b == 'undefined') { return closing; } // regular
