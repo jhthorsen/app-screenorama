@@ -1,5 +1,8 @@
 Revision history for perl distribution App-screenorama
 
+0.05 2015-05-04T07:55:24+0200
+ - PAUSE indexer failed.
+
 0.04 2015-05-03T23:44:24+0200
  - Add support for reading parameters from app->config
  - Add exit status to browser
