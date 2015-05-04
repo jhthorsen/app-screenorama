@@ -19,11 +19,9 @@ my ($program, @program_args) = @Screenorama::ARGV ? @Screenorama::ARGV : split /
 $config->{conduit}     ||= $ENV{SCREENORAMA_CONDUIT}     || 'pty';
 $config->{kill_signal} ||= $ENV{SCREENORAMA_KILL_SIGNAL} || 15;
 $config->{program_args} ||= \@program_args;
-$config->{program} ||= $program;
+$config->{program} ||= $program or die "Usage: $0 -- <program> [args]\n";
 $config->{single} //= $ENV{SCREENORAMA_SINGLE} || 0;
 $config->{stdin}  //= $ENV{SCREENORAMA_STDIN}  || 0;
-
-$program or die "Usage: $0 -- <program> [args]\n";
 
 get '/' => sub {
   my $c   = shift;

@@ -59,10 +59,49 @@ system errors.
 =head2 Server
 
   # let others connect to the running program
-  $ screenorama --listen http://*:5000 --single -- 'while sleep 1; do echo "hey!"; done'
+  $ screenorama daemon --listen http://*:5000 -- 'while sleep 1; do echo "hey!"; done'
 
   # pipe the output on incoming request
-  $ screenorama -- ls -l
+  $ screenorama daemon -- ls -l
+
+  # Set parameters from config file
+  $ MOJO_CONFIG=/path/to/config.pl screenorama daemon
+
+Supported config/environment variables:
+
+=over 4
+
+=item * conduit
+
+See L<Mojo::IOLoop::ReadWriteFork>.
+
+Default value: "pty".
+
+Environment variable: C<SCREENORAMA_CONDUIT>.
+
+=item * program
+
+The application to run.
+
+=item * program_args
+
+The arguments given to L</program>.
+
+=item * single
+
+Set this to true if the server should just run one application,
+shared between every connection. The default is false, meaning
+a new instance of L</program> will be started on each request.
+
+Environment variable: C<SCREENORAMA_SINGLE>.
+
+=item * stdin
+
+Set this to true if the L</program> should accept commands from STDIN.
+
+Environment variable: C<SCREENORAMA_STDIN>.
+
+=back
 
 =head2 Client
 
