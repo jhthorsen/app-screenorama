@@ -132,7 +132,7 @@ var screenorama = function() {
   screenorama.ws.onmessage = function(event) {
     if (window.console) console.log(event.data);
     var data = JSON.parse(event.data);
-    if (typeof data.output !== 'undefined') screenorama.printToScreen(data.output);
+    if (typeof data.output !== 'undefined') screenorama.printToScreen(data.output.replace(/</g, '&lt;'));
     if (typeof data.exit_value !== 'undefined') screenorama.exitStatus(data);
     window.scrollTo(0, document.body.scrollHeight);
   };
@@ -173,7 +173,7 @@ screenorama.printToScreen = function(str) {
     .replace(/\u001B\[(?:0?(\d?);(\d\d)|(\d*)(X?))m/g, screenorama.replaceColors)
     .replace(/(\u001B\[K|\x08\s\x08)/g, function() { screenorama.buf = screenorama.buf.replace(/[\x00-\x1f]*.[\x00-\x1f]*$/, ''); return ''; })
     .replace(/\u001B\(B/g, function() { return ''; })
-    .replace(/\u001B\[3;J\u001B\[H\u001B\[2J(.*)/, function(a, c) { clear = c; });
+    .replace(/\u001B\[3;J\u001B\[H\u001B\[2J(.*)/, function(a, c) { clear = c; })
 
   screenorama.buf += str;
 

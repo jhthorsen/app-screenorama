@@ -1,5 +1,8 @@
 Revision history for perl distribution App-screenorama
 
+0.06 Not Released
+ - Will escape "<" before printing to web
+
 0.05 2015-05-04T07:55:24+0200
  - PAUSE indexer failed.
 
