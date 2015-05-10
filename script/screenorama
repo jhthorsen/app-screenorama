@@ -104,6 +104,12 @@ var termColors = { // from http://flatuicolors.com/
 
 var screenorama = function() {
   var cursor = document.querySelector('.cursor');
+  var input = document.querySelector('input');
+
+  var attach = function(elem, events, cb) {
+    events = events.split(' ');
+    for (var i = 0; i < events.length; i++) elem.addEventListener(events[i], cb, false);
+  };
 
   screenorama.buf = '';
   screenorama.ws = new WebSocket('<%= $stream_base %>/stream');
@@ -120,16 +126,22 @@ var screenorama = function() {
     700
   );
 
+  var tDown;
+  attach(document, 'mousedown touchstart', function(e) { tDown = new Date().getTime(); });
+  attach(document, 'mouseup touchstop', function(e) { if (new Date().getTime() - tDown < 250) input.focus(); });
+
   screenorama.ws.onopen = function() {
-    document.onkeydown = screenorama.keyDown;
-    document.onkeypress = screenorama.keyPress;
-    setInterval(function() { screenorama.ws.send('{}'); }, 5000);
+    input.focus();
+    attach(input, 'keydown', screenorama.keydown);
+    attach(input, 'keypress', screenorama.keypress);
+    attach(input, 'paste', screenorama.paste);
+    setInterval(function() { screenorama.send('{}'); }, 5000);
   };
 % }
 
-  screenorama.ws.onmessage = function(event) {
-    if (window.console) console.log(event.data);
-    var data = JSON.parse(event.data);
+  screenorama.ws.onmessage = function(e) {
+    if (window.console) console.log(e.data);
+    var data = JSON.parse(e.data);
     if (typeof data.output !== 'undefined') screenorama.printToScreen(data.output.replace(/</g, '&lt;'));
     if (typeof data.exit_value !== 'undefined') screenorama.exitStatus(data);
     window.scrollTo(0, document.body.scrollHeight);
@@ -146,21 +158,26 @@ screenorama.exitStatus = function(data) {
   shell.appendChild(status);
 };
 
-screenorama.keyDown = function(e) {
-  if (window.console) console.log(e.which);
-  if (e.which == 8) {
-    e.preventDefault();
-    screenorama.ws.send('{"key":' + 0x7f + '}');
+screenorama.keydown = function(e) {
+  var k = e.keyCode || e.which;
+  if (window.console) console.log('keydown: ' + k);
+  switch (k) {
+    case 8: // backspace
+      return screenorama.send('{"key":' + 0x7f + '}', e);
+    case 9: // tab
+      return screenorama.send('{"key":9}', e);
   }
-  if (e.which == 9) {
-    e.preventDefault();
-    screenorama.ws.send('{"key":' + 0x09 + '}');
-  }
-}
+};
 
-screenorama.keyPress = function(e) {
+screenorama.keypress = function(e) {
   e.preventDefault();
-  screenorama.ws.send('{"key":' + e.keyCode + '}');
+  screenorama.send('{"key":' + (e.keyCode || e.which) + '}');
+};
+
+screenorama.paste = function(e) {
+  var keys = e.clipboardData.getData('text/plain');
+  e.preventDefault();
+  for (var i = 0; i < keys.length; i++) screenorama.send('{"key":' + keys.charCodeAt(i) + '}');
 };
 
 screenorama.printToScreen = function(str) {
@@ -212,10 +229,17 @@ screenorama.replaceColors = function(match, x, a, b) {
   return closing + '<span style="' + style.join(';') + '">';
 };
 
+screenorama.send = function(msg, e) {
+  if (e) e.preventDefault();
+  console.log(msg);
+  screenorama.ws.send(msg);
+};
+
 window.onload = screenorama;
   % end
 </head>
 <body>
 <div class="shell"><span class="output"></span><span class="cursor" style="display:none">&#9602;</span></div>
+<input style="position:absolute;top:-100px">
 </body>
 </html>
