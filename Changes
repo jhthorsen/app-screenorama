@@ -1,6 +1,6 @@
 Revision history for perl distribution App-screenorama
 
-0.06 Not Released
+0.06 2015-08-10T08:20:50+0200
  - Fix setting "program" from config file
  - Will escape "<" before printing to web
  - Capture keypress through input field, allowing copy/paste and touch support

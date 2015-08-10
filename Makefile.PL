@@ -16,5 +16,5 @@ WriteMakefile(
   },
   BUILD_REQUIRES => {'Test::More'                  => '0.88'},
   PREREQ_PM      => {'Mojo::IOLoop::ReadWriteFork' => '0.12', 'Mojolicious' => '5.00'},
-  test           => {TESTS                         => (-e 'META.yml' ? 't/*.t' : 't/*.t xt/*.t')},
+  test           => {TESTS                         => 't/*.t'},
 );
